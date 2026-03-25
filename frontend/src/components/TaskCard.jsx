@@ -10,9 +10,45 @@ import {
 import { Card } from "./ui/card";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import api from "@/lib/axios";
+import { toast } from "sonner";
+import { Input } from "./ui/input";
 
-const TaskCard = ({ task, index }) => {
+const TaskCard = ({ task, index, handleTaskChange }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [updateTaskTitle, setUpdateTaskTitle] = useState(task.title || "");
+
+  const deleteTask = async (taskId) => {
+    try {
+      await api.delete(`/tasks/${taskId}`);
+      toast.success(`Nhiệm vụ "${task.title}" đã được xoá thành công!`);
+      handleTaskChange();
+    } catch (error) {
+      console.error("Lỗi khi xoá nhiệm vụ: ", error);
+      toast.error("Lỗi khi xoá nhiệm vụ. Vui lòng thử lại.");
+    }
+  };
+
+  const updateTask = async () => {
+    try {
+      setIsEditing(false);
+      await api.put(`/tasks/${task._id}`, {
+        title: updateTaskTitle,
+      });
+      toast.success(`Nhiệm vụ đã đổi thành ${updateTaskTitle} !`);
+      handleTaskChange();
+    } catch (error) {
+      console.error("Lỗi khi cập nhật nhiệm vụ: ", error);
+      toast.error("Lỗi khi cập nhật nhiệm vụ. Vui lòng thử lại.");
+    }
+  };
+
+  const handleKeyPress = (event) => {
+    if (event.key === "Enter") {
+      updateTask();
+    }
+  };
+
   return (
     <Card
       className={cn(
@@ -47,6 +83,11 @@ const TaskCard = ({ task, index }) => {
               placeholder="Cần phải làm gì?"
               className="flex-1 h-12 text-base border-border/50 focus:border-primary/50 focus:ring-primary/20"
               type="text"
+              value={updateTaskTitle}
+              onChange={(e) => setUpdateTaskTitle(e.target.value)}
+              onKeyPress={handleKeyPress}
+              onBlur={() => setIsEditing(false)}
+              setUpdateTaskTitle={task.title || ""}
             />
           ) : (
             <p
@@ -86,6 +127,10 @@ const TaskCard = ({ task, index }) => {
             variant="ghost"
             size="icon"
             className="flex-shrink-0 transition-colors size-8 text-muted-foreground hover:text-info"
+            onClick={() => {
+              setIsEditing(true);
+              setUpdateTaskTitle(task.title || "");
+            }}
           >
             <SquarePen className="size-4" />
           </Button>
@@ -95,6 +140,7 @@ const TaskCard = ({ task, index }) => {
             variant="ghost"
             size="icon"
             className="flex-shrink-0 transition-colors size-8 text-muted-foreground hover:text-destructive"
+            onClick={() => deleteTask(task._id)}
           >
             <Trash2 className="size-4" />
           </Button>
