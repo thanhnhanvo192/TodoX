@@ -43,6 +43,28 @@ const TaskCard = ({ task, index, handleTaskChange }) => {
     }
   };
 
+  const toggleTaskCompleteButton = async () => {
+    try {
+      if (task.status === "active") {
+        await api.put(`/tasks/${task._id}`, {
+          status: "complete",
+          completedAt: new Date().toISOString(),
+        });
+        toast.success(`Nhiệm vụ "${task.title}" đã được hoàn thành!`);
+      } else {
+        await api.put(`/tasks/${task._id}`, {
+          status: "active",
+          completedAt: null,
+        });
+        toast.success(`Nhiệm vụ "${task.title}" đã được chuyển về đang làm!`);
+      }
+      handleTaskChange();
+    } catch (error) {
+      console.error("Lỗi khi cập nhật trạng thái nhiệm vụ: ", error);
+      toast.error("Lỗi khi cập nhật trạng thái nhiệm vụ. Vui lòng thử lại.");
+    }
+  };
+
   const handleKeyPress = (event) => {
     if (event.key === "Enter") {
       updateTask();
@@ -53,7 +75,7 @@ const TaskCard = ({ task, index, handleTaskChange }) => {
     <Card
       className={cn(
         "p-4 bg-gradient-card border-0 shadow-custom-md hover:shadow-custom-lg transition-all duration-200 animate-fade-in group",
-        task.status === "completed" && "opacity-75",
+        task.status === "complete" && "opacity-75",
       )}
       style={{ animationDelay: `${index * 50}ms` }}
     >
@@ -63,13 +85,14 @@ const TaskCard = ({ task, index, handleTaskChange }) => {
           variant="ghost"
           size="icon"
           className={cn(
-            " size-8 rounded-full transition-all duration-200",
-            task.status === "completed"
+            "flex-shrink-0 size-8 rounded-full transition-all duration-200",
+            task.status === "complete"
               ? "text-success hover:text-success/80"
               : "text-muted-foreground hover:text-primary",
           )}
+          onClick={toggleTaskCompleteButton}
         >
-          {task.status === "completed" ? (
+          {task.status === "complete" ? (
             <CheckCircle2 className="size-5" />
           ) : (
             <Circle className="size-5"></Circle>
@@ -93,7 +116,7 @@ const TaskCard = ({ task, index, handleTaskChange }) => {
             <p
               className={cn(
                 "text-base transition-all duration-200",
-                task.status === "completed"
+                task.status === "complete"
                   ? "line-through text-muted-foreground"
                   : "text-foreground",
               )}
